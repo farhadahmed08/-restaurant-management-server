@@ -33,10 +33,18 @@ const client = new MongoClient(uri);
   
       const foodCollection = client.db("restaurantManagement").collection("foods");
       const userCollection = client.db('restaurantManagement').collection('user');
-    //   const orderCollection = client.db("carDoctor").collection("bookings");
+   
       
       
-      
+      //jwt related api
+    app.post('/jwt',async(req,res)=>{
+      const user = req.body;
+      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{
+        expiresIn:'1h'
+      });
+      console.log(token)
+      res.send({token}); //short hand
+    })
   
         
         
