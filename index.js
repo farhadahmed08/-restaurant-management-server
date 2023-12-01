@@ -45,6 +45,24 @@ const client = new MongoClient(uri);
       console.log(token)
       res.send({token}); //short hand
     })
+
+
+     //middleware
+     const verifyToken = (req,res,next)=>{
+      console.log('inside verify token',req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({message:'unauthorized access'})
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+        if (err) {
+          return res.status(401).send({message:'unauthorized access'})
+        }
+        req.decoded = decoded;
+        next();
+      })
+     
+    }
   
         
         
@@ -52,13 +70,18 @@ const client = new MongoClient(uri);
   
     
 
-
+//users
     app.post('/users', async(req,res)=>{
-        const user = req.body;
-        console.log(user);
-        const result = await userCollection.insertOne(user);
-        res.send(result);
-      })
+      const user = req.body;
+      const query = {email:user.email}
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({message:'user already exists',insertedId:null})
+      }
+
+      const result = await userCollection.insertOne(user);
+      res.send(result);
+    })
   
   
   
@@ -92,11 +115,16 @@ const client = new MongoClient(uri);
       app.get("/foods/:id", async (req, res) => {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
-  
-  
         const result = await foodCollection.findOne(query);
         res.send(result);
       });
+
+
+      app.post('/foods',verifyToken,async(req,res)=>{
+        const item = req.body;
+        const result = await foodCollection.insertOne(item);
+        res.send(result)
+      })
   
       
   
