@@ -94,10 +94,10 @@ const client = new MongoClient(uri);
       
       //foods related api
 
-      app.get('/foods', async(req, res) =>{
-        const result = await foodCollection.find().toArray();
-        res.send(result);
-    });
+    //   app.get('/foods', async(req, res) =>{
+    //     const result = await foodCollection.find().toArray();
+    //     res.send(result);
+    // });
 
 
    
@@ -126,33 +126,42 @@ const client = new MongoClient(uri);
     // });
 
 
+     app.get('/foodsCount', async(req, res) =>{
+        const count = await foodCollection.estimatedDocumentCount();
+        res.send({count});
+    });
+
+    
 
 
 
-
-
-      // app.get("/foods", async (req, res) => {
-      //   const filter = req.query;
-      //   console.log(filter)
-      //    const query ={
-      //   //   // price:{$gt:10}
+      app.get("/foods", async (req, res) => {
+        const page =parseInt(req.query.page);
+        const size = parseInt(req.query.size);
+        const filter = req.query;
+        console.log(filter)
+         const query ={
+        //   // price:{$gt:10}
           
-      //     foodName:{$regex:filter.search,$options: "i"}
-      //    };
-      //    const options = {
-      //   //   // Sort matched documents in descending order by rating
-      //       sort: { 
-      //         price: filter.sort === 'asc' ? 1 :  -1
-      //        },
+        foodName:{$regex:filter.search,$options: "i"}
+         };
+         const options = {
+        //   // Sort matched documents in descending order by rating
+            sort: { 
+              price: filter.sort === 'asc' ? 1 :  -1
+             },
   
          
           
-      //   };
-      //   const cursor = foodCollection.find(query, options);
-      //   // const cursor = serviceCollection.find(query, options);
-      //   const result = await cursor.toArray();
-      //   res.send(result);
-      // });
+        };
+        const cursor = foodCollection.find(query, options);
+        // const cursor = serviceCollection.find(query, options);
+        const result = await cursor
+        .skip(page*size)
+        .limit(size)
+        .toArray();
+        res.send(result);
+      });
       
   
       app.get("/foods/:id", async (req, res) => {
