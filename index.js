@@ -4,7 +4,7 @@ const cors = require('cors');
 
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ObjectId,ServerApiVersion } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 
@@ -12,17 +12,20 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
-// const uri = "mongodb://0.0.0.0:27017/";
+const uri = "mongodb://0.0.0.0:27017/";
 
-const uri = "mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qaohrfy.mongodb.net/?retryWrites=true&w=majority";
+// const uri = "mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qaohrfy.mongodb.net/?retryWrites=true&w=majority";
 
-const client = new MongoClient(uri,{
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
+// const client = new MongoClient(uri,{
+//   serverApi: {
+//     version: ServerApiVersion.v1,
+//     strict: true,
+//     deprecationErrors: true,
+//   }
+// });
+
+
+const client = new MongoClient(uri);
 
 
 
@@ -213,11 +216,67 @@ const client = new MongoClient(uri,{
           res.send(result);
       });
 
+
+
+      
       app.post('/orderItems',async(req,res)=>{
         const orderItem = req.body;
+        console.log(orderItem.quantity)
+       
+        // const menuItem = await orderItemsCollection.findOne({ _id: new ObjectId(orderItem.menuId) });
+        // console.log(menuItem);
+
+        const inventoryItem = await foodCollection.findOne({ _id: new ObjectId(orderItem.menuId) });
+
+        if (!inventoryItem) {
+          return res.status(404).json({ error: 'inventoryItem item not found' });
+        }
+
+        const availableInventory = inventoryItem.
+        quantity
+        ;
+        console.log(availableInventory)
+
+   if (orderItem.quantity > availableInventory) {
+    return res.status(400).json({ error: 'Quantity exceeds available inventory' });
+  }
+
+   // Update the inventory in the database
+   const Update = await foodCollection.updateOne(
+    { _id: new ObjectId(orderItem.menuId) },
+    { $set: { quantity: availableInventory - orderItem.quantity } }
+  );
+
+  console.log(Update)
+      
+         
         const result = await orderItemsCollection.insertOne(orderItem);
         res.send(result)
+        // console.log(result);
       });
+
+
+
+
+      // app.post('/orderItems',async(req,res)=>{
+      //   const orderItem = req.body;
+      //   const product = await orderItemsCollection.findOne({ _id: 
+      //     menuId
+      //      });
+      //      if (!product || product.quantity < orderItem.quantity) {
+      //       return res.status(400).json({ error: 'Insufficient inventory' });
+      //     }
+      //   const result = await orderItemsCollection.insertOne(orderItem);
+       
+      //   res.send(result)
+      // });
+
+
+
+
+
+
+
 
       app.delete('/orderItems/:id', async(req,res)=>{
         const id = req.params.id;
@@ -225,6 +284,9 @@ const client = new MongoClient(uri,{
         const result = await orderItemsCollection.deleteOne(query);
         res.send(result);
       })
+
+
+      
 
       
       //myAdded
